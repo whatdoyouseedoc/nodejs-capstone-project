@@ -1,34 +1,69 @@
-const { dateToNumber } = require('../utils');
-const knex = require('./knex');
+const db = require(".");
 
-function createUser(user) {
-  return knex('users').insert(user);
+async function createUser({_id, username}) {
+  const query = `INSERT INTO users (_id, username) VALUES ('${_id}', '${username}')`;
+
+  return new Promise((resolve, reject) => {
+    db.run(query, [], (err) => {
+      if (err) {
+        reject(err);
+      }
+
+      resolve();
+    });
+  });
 }
 
-function getAllUsers() {
-  return knex('users').select('*');
+async function getAllUsers() {
+  const query = `SELECT * FROM users`;
+
+  return new Promise((resolve, reject) => {
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      }
+
+      resolve(rows);
+    });
+  });
 }
 
 /**
  * Get user by _id
  * @param {string} _id user id 
- * @returns {object} {_id: string, username: string}
+ * @returns {promise} {_id: string, username: string}
  */
-function getUserById(userId) {
-  return knex('users').where({
-    _id: userId
-  }).first();
+async function getUserById(id) {
+  const query = `SELECT * FROM users WHERE _id = '${id}'`;
+
+  return new Promise((resolve, reject) => {
+    db.get(query, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      }
+  
+      resolve(rows);
+    });
+  });
 }
 
 /**
  * Get user by username
  * @param {string} username 
- * @returns {object} {_id: string, username: string}
+ * @returns {promise} {_id: string, username: string}
  */
-function getUserByUsername(username) {
-  return knex('users').where({
-    username
-  }).first();
+async function getUserByUsername(username) {
+  const query = `SELECT * FROM users WHERE username = '${username}'`;
+
+  return new Promise((resolve, reject) => {
+    db.get(query, [], (err, row) => {
+      if (err) {
+        reject(err);
+      }
+  
+      resolve(row);
+    });
+  });
 }
 
 /**
@@ -37,33 +72,33 @@ function getUserByUsername(username) {
  * @param {string} from 
  * @param {string} to 
  * @param {string} limit 
- * @returns 
+ * @returns {promise} {username: string, count: number, logs: [description: string, duration: number, date: number]}
  */
-function getUserWithExercises(userId, from, to, limit) {
-  const query =  knex('users').select('*')
-  .where({
-    _id: userId
-  }).innerJoin('exercises', 'users._id', '=', 'exercises.user_id');
+async function getUserWithExercises(userId, from, to, limit)  {
+  const query = `
+    SELECT username, description, duration, date,
+      (SELECT COUNT(user_id) FROM exercises WHERE user_id = '${userId}') AS count
+    FROM users
+    JOIN exercises ON exercises.user_id = users._id
+    WHERE date >= ${from} AND date <= ${to} AND _id = '${userId}'
+    LIMIT ${limit}
+  `;
 
-  if (from) {
-    query.where('date', '>=', from);
-  }
-
-  if (to) {
-    query.where('date', '<=', to);
-  }
-
-  if (limit) {
-    query.limit(limit);
-  }
-
-  return query;
+  return new Promise((resolve, reject) => {
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      }
+  
+      resolve(rows);
+    });
+  });
 }
 
 module.exports = {
+  getUserById,
   createUser,
   getAllUsers,
-  getUserById,
-  getUserWithExercises,
-  getUserByUsername
+  getUserByUsername,
+  getUserWithExercises
 };

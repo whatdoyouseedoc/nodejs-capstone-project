@@ -2,11 +2,11 @@ const router = require('express').Router();
 const { nanoid } = require('nanoid');
 const { addExercise } = require('../db/exercises');
 const {
-  getAllUsers,
   createUser,
-  getUserWithExercises,
   getUserById,
+  getAllUsers,
   getUserByUsername,
+  getUserWithExercises,
 } = require('../db/users');
 const {
   validateDate,
@@ -49,9 +49,7 @@ router.get('/:_id', async (req, res) => {
     return res.status(200).json(user);
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({ message: `Error while getting users.` });
+    res.status(500).json({ message: `Error while getting users.` });
   }
 });
 
@@ -78,9 +76,7 @@ router.post('/', async (req, res) => {
     return res.status(201).json(user);
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ message: `Error while creating new user.` });
+    return res.status(500).json({ message: `Error while creating new user.` });
   }
 });
 
@@ -123,7 +119,7 @@ router.get('/:id/logs', async (req, res) => {
     }
 
     if (validateLimit(req.query.limit)) {
-      limit = req.query.limit;
+      limit = Number(req.query.limit);
     }
 
     let from = null,
@@ -154,8 +150,7 @@ function mapUserWithExercises(raw) {
     return {};
   }
 
-  const { _id, username } = raw[0];
-  const count = raw.length;
+  const { _id, username, count } = raw[0];
 
   const logs = raw.map(({ description, duration, date }) => {
     return {
