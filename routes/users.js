@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+/* get user by id */
 router.get('/:_id', async (req, res) => {
   try {
     const { _id } = req.params;
@@ -114,8 +115,8 @@ router.get('/:id/logs', async (req, res) => {
       id = req.params.id;
     } else {
       return res
-        .status(400)
-        .json({ message: `Bad request. Invalid user id: ${req.params.id}` });
+        .status(404)
+        .json({ message: `User with _id ${id} does not exists.` });
     }
 
     if (validateLimit(req.query.limit)) {
