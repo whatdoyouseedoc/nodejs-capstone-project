@@ -96,6 +96,10 @@ router.post('/:id/exercises', async (req, res) => {
       date,
     };
 
+    if ([user_id, description, duration, date].some((it) => it === undefined || it === '')) {
+      res.status(400).json({ message: 'Bad request' });
+    }
+
     await addExercise(exercise);
     res.status(201).json(exercise);
   } catch (error) {
