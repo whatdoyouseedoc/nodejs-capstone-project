@@ -1,5 +1,9 @@
 const moment = require("moment");
 
+const userIdRegExp = /^[A-Za-z\d\-\_]{21}$/;
+const dateRegExp = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
+const numbersStringRegExp = /^(\d+)?$/;
+
 function dateToNumber(date) {
   if (!isNaN(Number(date))) {
     return date;
@@ -24,6 +28,10 @@ function validateLimit(limit) {
   return /^(\d+)?$/.test(limit);
 }
 
+function validateDuration(value) {
+  return /^(\d+)?$/.test(value)
+}
+
 function formatUnixToStringDate(date) {
   return moment(date).format('YYYY-MM-DD');
 }
@@ -34,5 +42,9 @@ module.exports = {
   formatUnixToStringDate,
   resolveDate,
   validateUserId,
-  validateLimit
+  validateLimit,
+  validateDuration,
+  userIdRegExp,
+  dateRegExp,
+  numbersStringRegExp
 };

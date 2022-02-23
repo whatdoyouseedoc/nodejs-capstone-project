@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { check, param, validationResult } = require('express-validator');
 const { nanoid } = require('nanoid');
 const { addExercise } = require('../db/exercises');
 const {
@@ -14,6 +15,9 @@ const {
   formatUnixToStringDate,
   validateUserId,
   validateLimit,
+  userIdRegExp,
+  numbersStringRegExp,
+  dateRegExp,
 } = require('../utils');
 
 /* get all users */
@@ -82,33 +86,44 @@ router.post('/', async (req, res) => {
 });
 
 // create new exercise
-router.post('/:id/exercises', async (req, res) => {
-  try {
-    const date = resolveDate(req.body.date);
-    const duration = Number(req.body.duration);
-    const { description } = req.body;
-    const { id: user_id } = req.params;
+router.post(
+  '/:id/exercises',
+  [
+    param('id', 'Incorrect user id').matches(userIdRegExp),
+    check('description', 'Incorrect description, should be a string').isLength({ min: 1}),
+    check('duration', 'Incorrect duration value, should be string of numbers').matches(numbersStringRegExp).toInt(),
+    check('date', 'Incorrect date, should match YYYY-MM-DD format').matches(dateRegExp)
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
 
-    const exercise = {
-      user_id,
-      description,
-      duration,
-      date,
-    };
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: 'Incorrect data.', errors: errors.array()})
+      }
 
-    if ([user_id, description, duration, date].some((it) => it === undefined || it === '')) {
-      res.status(400).json({ message: 'Bad request' });
+      const date = resolveDate(req.body.date);
+      const duration = req.body.duration;
+      const { description } = req.body;
+      const { id: user_id } = req.params;
+
+      const exercise = {
+        user_id,
+        description,
+        duration,
+        date,
+      };
+
+      await addExercise(exercise);
+      res.status(201).json(exercise);
+    } catch (error) {
+      console.log(error);
+      res
+        .status(500)
+        .json({ message: 'Error while adding new exercise to user.' });
     }
-
-    await addExercise(exercise);
-    res.status(201).json(exercise);
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: 'Error while adding new exercise to user.' });
   }
-});
+);
 
 router.get('/:id/logs', async (req, res) => {
   try {

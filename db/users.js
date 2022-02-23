@@ -75,18 +75,37 @@ async function getUserByUsername(username) {
  * @returns {promise} {username: string, count: number, logs: [description: string, duration: number, date: number]}
  */
 async function getUserWithExercises(userId, from, to, limit)  {
+  console.log(userId, from, to, limit);
+  const params = [userId, from, to, userId, limit].filter(it => it !== null);
   const query = `
     SELECT username, description, duration, date,
-      (SELECT COUNT(user_id) FROM exercises WHERE user_id = '${userId}') AS count
+      (SELECT COUNT(user_id) FROM exercises WHERE user_id = ?) AS count
     FROM users
     JOIN exercises ON exercises.user_id = users._id
-    WHERE date >= ${from} AND date <= ${to} AND _id = '${userId}'
-    LIMIT ${limit}
+    WHERE _id = ?${from !== null ? ' AND date >= ?' : ''}${to !== null ? ' AND date <= ?' : ''}
+    ${limit !== null ? ' LIMIT ?' : ''}
   `;
 
+  // const query = `
+  //   SELECT username, description, duration, date,
+  //     (SELECT COUNT(user_id) FROM exercises WHERE user_id = 'INbkXEADX18sepIY0M2Aw') AS count
+  //   FROM users
+  //   JOIN exercises ON exercises.user_id = users._id
+  //   WHERE _id = 'INbkXEADX18sepIY0M2Aw'
+  //   AND date >= 1514764800000
+  //   AND date <= 1609459200000
+  //   LIMIT 3
+  // `;
+
+  // const query = `SELECT * FROM users WHERE _id = ?`;
+
+  console.log(query);
+  console.log(params);
+
   return new Promise((resolve, reject) => {
-    db.all(query, [], (err, rows) => {
+    db.all(query, params, (err, rows) => {
       if (err) {
+        console.log('here');
         reject(err);
       }
   
