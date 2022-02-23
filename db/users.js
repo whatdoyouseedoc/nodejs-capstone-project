@@ -1,10 +1,10 @@
 const db = require(".");
 
 async function createUser({_id, username}) {
-  const query = `INSERT INTO users (_id, username) VALUES ('${_id}', '${username}')`;
+  const query = `INSERT INTO users (_id, username) VALUES (?, ?)`;
 
   return new Promise((resolve, reject) => {
-    db.run(query, [], (err) => {
+    db.run(query, [_id, username], (err) => {
       if (err) {
         reject(err);
       }
@@ -34,10 +34,10 @@ async function getAllUsers() {
  * @returns {promise} {_id: string, username: string}
  */
 async function getUserById(id) {
-  const query = `SELECT * FROM users WHERE _id = '${id}'`;
+  const query = `SELECT * FROM users WHERE _id = ?`;
 
   return new Promise((resolve, reject) => {
-    db.get(query, [], (err, rows) => {
+    db.get(query, [id], (err, rows) => {
       if (err) {
         reject(err);
       }
@@ -53,10 +53,10 @@ async function getUserById(id) {
  * @returns {promise} {_id: string, username: string}
  */
 async function getUserByUsername(username) {
-  const query = `SELECT * FROM users WHERE username = '${username}'`;
+  const query = `SELECT * FROM users WHERE username = ?`;
 
   return new Promise((resolve, reject) => {
-    db.get(query, [], (err, row) => {
+    db.get(query, [username], (err, row) => {
       if (err) {
         reject(err);
       }
