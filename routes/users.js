@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { check, param, validationResult } = require('express-validator');
+const { check, param, query, body, validationResult } = require('express-validator');
 const { nanoid } = require('nanoid');
 const { addExercise } = require('../db/exercises');
 const {
@@ -10,14 +10,12 @@ const {
   getUserWithExercises,
 } = require('../db/users');
 const {
-  validateDate,
-  resolveDate,
   formatUnixToStringDate,
   validateUserId,
-  validateLimit,
   userIdRegExp,
   numbersStringRegExp,
-  dateRegExp,
+  dateSanitizer,
+  limitSanitizer,
 } = require('../utils');
 
 /* get all users */
@@ -90,22 +88,26 @@ router.post(
   '/:id/exercises',
   [
     param('id', 'Incorrect user id').matches(userIdRegExp),
-    check('description', 'Incorrect description, should be a string').isLength({ min: 1}),
-    check('duration', 'Incorrect duration value, should be string of numbers').matches(numbersStringRegExp).toInt(),
-    check('date', 'Incorrect date, should match YYYY-MM-DD format').matches(dateRegExp)
+    check('description', 'Incorrect description, should be a string').isLength({
+      min: 1,
+    }),
+    check('duration', 'Incorrect duration value, should be string of numbers')
+      .matches(numbersStringRegExp)
+      .toInt(),
+    body('date').customSanitizer((value) => dateSanitizer(value, formatUnixToStringDate(Date.now()))),
   ],
   async (req, res) => {
     try {
       const errors = validationResult(req);
 
       if (!errors.isEmpty()) {
-        return res.status(400).json({ message: 'Incorrect data.', errors: errors.array()})
+        return res
+          .status(400)
+          .json({ message: 'Incorrect data.', errors: errors.array() });
       }
 
-      const date = resolveDate(req.body.date);
-      const duration = req.body.duration;
-      const { description } = req.body;
       const { id: user_id } = req.params;
+      const { description, duration, date } = req.body;
 
       const exercise = {
         user_id,
@@ -125,45 +127,35 @@ router.post(
   }
 );
 
-router.get('/:id/logs', async (req, res) => {
-  try {
-    let id,
-      limit = null;
+router.get(
+  '/:id/logs',
+  [
+    query('from').customSanitizer(dateSanitizer),
+    query('to').customSanitizer(dateSanitizer),
+    query('limit').customSanitizer(limitSanitizer),
+  ],
+  async (req, res) => {
+    try {
+      if (!validateUserId(req.params.id)) {
+        return res
+          .status(404)
+          .json({ message: `User with _id ${id} does not exists.` });
+      }
 
-    if (validateUserId(req.params.id)) {
-      id = req.params.id;
-    } else {
-      return res
-        .status(404)
-        .json({ message: `User with _id ${id} does not exists.` });
+      const { from, to, limit } = req.query;
+
+      const raw = await getUserWithExercises(req.params.id, from, to, limit);
+      const user = mapUserWithExercises(raw);
+
+      res.status(200).json(user);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: `Something went wrong while trying to get user logs.`,
+      });
     }
-
-    if (validateLimit(req.query.limit)) {
-      limit = Number(req.query.limit);
-    }
-
-    let from = null,
-      to = null;
-
-    if (req.query.from && validateDate(req.query.from)) {
-      from = new Date(req.query.from).valueOf();
-    }
-
-    if (req.query.to && validateDate(req.query.to)) {
-      to = new Date(req.query.to).valueOf();
-    }
-
-    const raw = await getUserWithExercises(req.params.id, from, to, limit);
-    const user = mapUserWithExercises(raw);
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: `Something went wrong while trying to get user logs.`,
-    });
   }
-});
+);
 
 function mapUserWithExercises(raw) {
   if (!raw.length) {

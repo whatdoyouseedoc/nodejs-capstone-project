@@ -36,6 +36,14 @@ function formatUnixToStringDate(date) {
   return moment(date).format('YYYY-MM-DD');
 }
 
+function dateSanitizer(value, defaultValue = null) {
+  return dateRegExp.test(value) ? value : defaultValue;
+}
+
+function limitSanitizer(value) {
+  return numbersStringRegExp.test(value) ? value : null;
+}
+
 module.exports = {
   dateToNumber,
   validateDate,
@@ -46,5 +54,7 @@ module.exports = {
   validateDuration,
   userIdRegExp,
   dateRegExp,
-  numbersStringRegExp
+  numbersStringRegExp,
+  dateSanitizer,
+  limitSanitizer
 };
