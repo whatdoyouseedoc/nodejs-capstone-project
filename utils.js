@@ -20,6 +20,10 @@ function validateDate(date) {
   return /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/.test(date);
 }
 
+function dateQueryValidator(value) {
+  return dateRegExp.test(value) || value === undefined;
+}
+
 function validateUserId(id) {
   return /^[A-Za-z\d\-\_]{21}$/.test(id);
 }
@@ -37,6 +41,7 @@ function formatUnixToStringDate(date) {
 }
 
 function dateSanitizer(value, defaultValue = null) {
+  console.log('value ', value);
   return dateRegExp.test(value) ? value : defaultValue;
 }
 
@@ -56,5 +61,6 @@ module.exports = {
   dateRegExp,
   numbersStringRegExp,
   dateSanitizer,
-  limitSanitizer
+  limitSanitizer,
+  dateQueryValidator
 };

@@ -8,4 +8,6 @@ const db = new sqlite3.Database('./db.sqlite3', (err) => {
   console.log('DB connected.');
 });
 
+db.run("PRAGMA foreign_keys = ON");
+
 module.exports = db;

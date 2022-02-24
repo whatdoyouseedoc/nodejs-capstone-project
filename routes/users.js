@@ -16,6 +16,7 @@ const {
   numbersStringRegExp,
   dateSanitizer,
   limitSanitizer,
+  dateQueryValidator
 } = require('../utils');
 
 /* get all users */
@@ -120,7 +121,15 @@ router.post(
       res.status(201).json(exercise);
     } catch (error) {
       console.log(error);
-      res
+
+      // not sure how better to define FOREIGN KEY error
+      if (error.code === 'SQLITE_CONSTRAINT') {
+        return res
+          .status(404)
+          .json({ message: 'User in not exists.' });
+      }
+
+      return res
         .status(500)
         .json({ message: 'Error while adding new exercise to user.' });
     }
@@ -130,12 +139,19 @@ router.post(
 router.get(
   '/:id/logs',
   [
-    query('from').customSanitizer(dateSanitizer),
-    query('to').customSanitizer(dateSanitizer),
+    query('from', 'Incorrect from value, user YYYY-MM-DD format.').custom(dateQueryValidator),
+    query('to', 'Incorrect to value, user YYYY-MM-DD format.').custom(dateQueryValidator),
     query('limit').customSanitizer(limitSanitizer),
   ],
   async (req, res) => {
     try {
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        return res.status(400).json({message: 'Incorrect data.', errors: errors.array()});
+      }
+  
+      
       if (!validateUserId(req.params.id)) {
         return res
           .status(404)
@@ -144,9 +160,11 @@ router.get(
 
       const { from, to, limit } = req.query;
 
+      console.log(req.params.id, from, to, limit);
+
       const raw = await getUserWithExercises(req.params.id, from, to, limit);
       const user = mapUserWithExercises(raw);
-
+      
       res.status(200).json(user);
     } catch (error) {
       console.log(error);
@@ -168,7 +186,7 @@ function mapUserWithExercises(raw) {
     return {
       description,
       duration,
-      date: formatUnixToStringDate(date),
+      date,
     };
   });
 
