@@ -139,8 +139,8 @@ router.post(
 router.get(
   '/:id/logs',
   [
-    query('from', 'Incorrect from value, user YYYY-MM-DD format.').custom(dateQueryValidator),
-    query('to', 'Incorrect to value, user YYYY-MM-DD format.').custom(dateQueryValidator),
+    query('from', 'Incorrect from value, user YYYY-MM-DD format.').custom(dateQueryValidator).default(null),
+    query('to', 'Incorrect to value, user YYYY-MM-DD format.').custom(dateQueryValidator).default(null),
     query('limit').customSanitizer(limitSanitizer),
   ],
   async (req, res) => {
@@ -149,8 +149,7 @@ router.get(
 
       if (!errors.isEmpty()) {
         return res.status(400).json({message: 'Incorrect data.', errors: errors.array()});
-      }
-  
+      }  
       
       if (!validateUserId(req.params.id)) {
         return res
@@ -159,8 +158,6 @@ router.get(
       }
 
       const { from, to, limit } = req.query;
-
-      console.log(req.params.id, from, to, limit);
 
       const raw = await getUserWithExercises(req.params.id, from, to, limit);
       const user = mapUserWithExercises(raw);

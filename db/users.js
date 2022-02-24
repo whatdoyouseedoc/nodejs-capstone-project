@@ -87,7 +87,7 @@ async function getUserWithExercises(userId, from, to, limit)  {
     ${to !== null ? ' AND date <= ?' : ''}
     ${limit !== null ? ' LIMIT ?' : ''}
   `;
-  
+  console.log(params);
   return new Promise((resolve, reject) => {
     db.all(query, params, (err, rows) => {
       if (err) {
